@@ -14,7 +14,7 @@ class LogicalSearchService:
         :return: список текстов документов.
         """
         documents = await self.text_document_service.get_all_documents()
-        return [doc.text for doc in documents]
+        return [doc for doc in documents]
 
     @staticmethod
     def tokenize(text):
@@ -27,93 +27,103 @@ class LogicalSearchService:
 
     async def search(self, query):
         """
-        Выполняет логический поиск по запросу.
-        :param query: строка запроса с использованием
-        логических операторов AND, OR, NOT.
-        :return: список индексов документов, соответствующих запросу.
+        Выполняет логический поиск по запросу с поддержкой вложенных условий.
+        :param query: строка запроса с использованием логических
+         операторов AND, OR, NOT.
+        :return: список названий документов, соответствующих запросу.
         """
-        # Разделение запроса на части по операторам
         query_tokens = self.tokenize(query)
-        results = None
+        return await self._evaluate_expression(query_tokens)
+
+    async def _evaluate_expression(self, tokens):
+        """
+        Оценивает логическое выражение с поддержкой вложенных условий.
+        :param tokens: список токенов выражения.
+        :return: множество названий документов, соответствующих выражению.
+        """
+        operators = {"and", "or", "not"}
+        precedence = {"not": 3, "and": 2, "or": 1}
+        output = []
+        ops_stack = []
+
+        def apply_operator(op):  # noqa
+            if op == "not":
+                set1 = output.pop()
+                result = self._not_operation(set1, set())
+            else:
+                set2 = output.pop()
+                set1 = output.pop()
+                if op == "and":
+                    result = self._and_operation(set1, set2)
+                elif op == "or":
+                    result = self._or_operation(set1, set2)
+            output.append(result)
 
         i = 0
-        while i < len(query_tokens):
-            token = query_tokens[i]
+        while i < len(tokens):
+            token = tokens[i]
 
-            if token == "and":
-                i += 1
-                token_next = query_tokens[i]
-                results = self._and_operation(
-                    results, await self._find_documents(token_next)
-                )
-            elif token == "or":
-                i += 1
-                token_next = query_tokens[i]
-                results = self._or_operation(
-                    results, await self._find_documents(token_next)
-                )
-            elif token == "not":
-                i += 1
-                token_next = query_tokens[i]
-                results = self._not_operation(
-                    results, await self._find_documents(token_next)
-                )
+            if token == "(":
+                ops_stack.append(token)
+            elif token == ")":
+                while ops_stack and ops_stack[-1] != "(":
+                    apply_operator(ops_stack.pop())
+                ops_stack.pop()
+            elif token in operators:
+                while (
+                    ops_stack
+                    and ops_stack[-1] in operators
+                    and precedence[ops_stack[-1]] >= precedence[token]
+                ):
+                    apply_operator(ops_stack.pop())
+                ops_stack.append(token)
             else:
-                if results is None:
-                    results = await self._find_documents(token)
-                else:
-                    results = self._and_operation(
-                        results, await self._find_documents(token)
-                    )
+                term_results = await self._find_documents(token)
+                output.append(term_results)
             i += 1
 
-        return results if results is not None else []
+        while ops_stack:
+            apply_operator(ops_stack.pop())
+
+        return output[0] if output else set()
 
     async def _find_documents(self, term):
         """
         Ищет документы, содержащие определённый терм.
         :param term: строка с термином.
-        :return: множество индексов документов, содержащих терм.
+        :return: множество названий документов, содержащих терм.
         """
         documents = await self.text_document_service.get_all_documents()
         return {
-            i
-            for i, doc in enumerate(documents)
-            if term in self.tokenize(doc.text)
+            doc.name for doc in documents if term in self.tokenize(doc.text)
         }
 
     @staticmethod
-    def _and_operation(first_set, second_set):
+    def _and_operation(set1: set[str], set2: set[str]) -> set[str]:
         """
         Реализация логической операции AND.
-        :param first_set: множество индексов документов.
-        :param second_set: множество индексов документов.
+        :param set1: множество названий документов.
+        :param set2: множество названий документов.
         :return: пересечение множеств.
         """
-        if first_set is None:
-            return second_set
-        return first_set.intersection(second_set)
+        return set1.intersection(set2)
 
     @staticmethod
-    def _or_operation(first_set, second_set):
+    def _or_operation(set1: set[str], set2: set[str]) -> set[str]:
         """
         Реализация логической операции OR.
-        :param first_set: множество индексов документов.
-        :param second_set: множество индексов документов.
+        :param set1: множество названий документов.
+        :param set2: множество названий документов.
         :return: объединение множеств.
         """
-        if first_set is None:
-            return second_set
-        return first_set.union(second_set)
+        return set1.union(set2)
 
-    async def _not_operation(self, first_set, second_set):
+    @staticmethod
+    def _not_operation(set1: set[str], set2: set[str]) -> set[str]:
         """
         Реализация логической операции NOT.
-        :param first_set: множество индексов документов.
-        :param second_set: множество индексов документов.
+        :param set1: множество названий документов.
+        :param set2: множество названий документов.
         :return: множество документов, которые есть в set1, но не в set2.
         """
-        documents = await self._load_documents()
-        if first_set is None:
-            return set(range(len(documents))).difference(second_set)
-        return first_set.difference(second_set)
+        return set1.difference(set2)
