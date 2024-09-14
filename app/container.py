@@ -4,10 +4,14 @@ from typing import Callable
 from beanie import init_beanie
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 
 from app.service.logical_search.service import LogicalSearchService
-from app.service.text_document import TextDocument, TextDocumentService, TextDocumentRepository
+from app.service.text_document import (
+    TextDocument,
+    TextDocumentRepository,
+    TextDocumentService,
+)
 
 APP_TITLE = "Logical Search Application"
 
@@ -24,8 +28,10 @@ class ApplicationContainer(containers.DeclarativeContainer):
         allow_index_dropping=False,
     )
 
-    text_document_repository: Provider[TextDocumentRepository] = providers.Singleton(
-        TextDocumentRepository,
+    text_document_repository: Provider[TextDocumentRepository] = (
+        providers.Singleton(
+            TextDocumentRepository,
+        )
     )
 
     text_document_service: Provider[TextDocumentService] = providers.Singleton(
@@ -33,9 +39,11 @@ class ApplicationContainer(containers.DeclarativeContainer):
         text_document_repository=text_document_repository,
     )
 
-    logical_search_service: Provider[LogicalSearchService] = providers.Singleton(
-        LogicalSearchService,
-        text_document_service=text_document_service,
+    logical_search_service: Provider[LogicalSearchService] = (
+        providers.Singleton(
+            LogicalSearchService,
+            text_document_service=text_document_service,
+        )
     )
 
     app: Callable[[], FastAPI] = providers.Singleton(FastAPI, title=APP_TITLE)

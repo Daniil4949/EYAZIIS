@@ -23,12 +23,13 @@ class LogicalSearchService:
         :param text: строка текста.
         :return: список термов.
         """
-        return re.findall(r'\w+', text.lower())
+        return re.findall(r"\w+", text.lower())
 
     async def search(self, query):
         """
         Выполняет логический поиск по запросу.
-        :param query: строка запроса с использованием логических операторов AND, OR, NOT.
+        :param query: строка запроса с использованием
+        логических операторов AND, OR, NOT.
         :return: список индексов документов, соответствующих запросу.
         """
         # Разделение запроса на части по операторам
@@ -39,23 +40,31 @@ class LogicalSearchService:
         while i < len(query_tokens):
             token = query_tokens[i]
 
-            if token == 'and':
+            if token == "and":
                 i += 1
                 token_next = query_tokens[i]
-                results = self._and_operation(results, await self._find_documents(token_next))
-            elif token == 'or':
+                results = self._and_operation(
+                    results, await self._find_documents(token_next)
+                )
+            elif token == "or":
                 i += 1
                 token_next = query_tokens[i]
-                results = self._or_operation(results, await self._find_documents(token_next))
-            elif token == 'not':
+                results = self._or_operation(
+                    results, await self._find_documents(token_next)
+                )
+            elif token == "not":
                 i += 1
                 token_next = query_tokens[i]
-                results = self._not_operation(results, await self._find_documents(token_next))
+                results = self._not_operation(
+                    results, await self._find_documents(token_next)
+                )
             else:
                 if results is None:
                     results = await self._find_documents(token)
                 else:
-                    results = self._and_operation(results, await self._find_documents(token))
+                    results = self._and_operation(
+                        results, await self._find_documents(token)
+                    )
             i += 1
 
         return results if results is not None else []
@@ -67,7 +76,11 @@ class LogicalSearchService:
         :return: множество индексов документов, содержащих терм.
         """
         documents = await self.text_document_service.get_all_documents()
-        return {i for i, doc in enumerate(documents) if term in self.tokenize(doc.text)}
+        return {
+            i
+            for i, doc in enumerate(documents)
+            if term in self.tokenize(doc.text)
+        }
 
     @staticmethod
     def _and_operation(first_set, second_set):

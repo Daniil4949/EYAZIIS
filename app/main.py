@@ -10,7 +10,7 @@ from app.web import build_v1_router
 
 
 def create_web_app(
-        container: Optional[ApplicationContainer] = None,
+    container: Optional[ApplicationContainer] = None,
 ) -> FastAPI:
     container = container or ApplicationContainer()
 
