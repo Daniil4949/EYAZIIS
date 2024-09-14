@@ -34,4 +34,4 @@ def create_web_app(
 def main() -> None:
     app = create_web_app()
     port = app.state.container.config.server.port()
-    uvicorn.run(app, port=port, log_config=None)
+    uvicorn.run(app, port=port)
