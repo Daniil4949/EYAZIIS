@@ -1,0 +1,28 @@
+repos:
+  - repo: local
+    hooks:
+
+      - id: black
+        name: black
+        language: system
+        entry: pipenv run black -l 79
+        types: [python]
+
+      - id: flake8
+        name: flake8
+        language: system
+        entry: >
+               pipenv run flake8
+               --per-file-ignores '*/__init__.py: F401'
+               --max-adjustable-complexity 8
+        types: [python]
+
+      - id: isort
+        name: isort
+        language: system
+        entry: >
+               pipenv run isort
+               --multi-line 3
+               --trailing-comma
+               --use-parentheses
+        types: [python]

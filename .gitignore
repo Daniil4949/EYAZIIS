@@ -1,0 +1,11 @@
+__pycache__/
+venv/
+.venv/
+.DS_store
+.env
+.env*
+.pytest_cache
+.idea
+pip.conf
+**/_bot_token.txt
+**/_dialogs/*.json
