@@ -1,119 +1,121 @@
 import re
 from dataclasses import dataclass
 
-from app.service.text_document import TextDocumentService
+from app.service.text_document import TextDocument, TextDocumentService
 
 
 @dataclass
 class LogicalSearchService:
     text_document_service: TextDocumentService
 
-    async def _load_documents(self):
+    async def search(self, query: str) -> list[TextDocument]:
         """
-        Загрузка документов из MongoDB.
-        :return: список текстов документов.
-        """
-        documents = await self.text_document_service.get_all_documents()
-        return [doc.text for doc in documents]
-
-    @staticmethod
-    def tokenize(text):
-        """
-        Преобразует текст в список слов (термов), удаляя знаки препинания.
-        :param text: строка текста.
-        :return: список термов.
-        """
-        return re.findall(r"\w+", text.lower())
-
-    async def search(self, query):
-        """
-        Выполняет логический поиск по запросу.
-        :param query: строка запроса с использованием
-        логических операторов AND, OR, NOT.
-        :return: список индексов документов, соответствующих запросу.
-        """
-        # Разделение запроса на части по операторам
-        query_tokens = self.tokenize(query)
-        results = None
-
-        i = 0
-        while i < len(query_tokens):
-            token = query_tokens[i]
-
-            if token == "and":
-                i += 1
-                token_next = query_tokens[i]
-                results = self._and_operation(
-                    results, await self._find_documents(token_next)
-                )
-            elif token == "or":
-                i += 1
-                token_next = query_tokens[i]
-                results = self._or_operation(
-                    results, await self._find_documents(token_next)
-                )
-            elif token == "not":
-                i += 1
-                token_next = query_tokens[i]
-                results = self._not_operation(
-                    results, await self._find_documents(token_next)
-                )
-            else:
-                if results is None:
-                    results = await self._find_documents(token)
-                else:
-                    results = self._and_operation(
-                        results, await self._find_documents(token)
-                    )
-            i += 1
-
-        return results if results is not None else []
-
-    async def _find_documents(self, term):
-        """
-        Ищет документы, содержащие определённый терм.
-        :param term: строка с термином.
-        :return: множество индексов документов, содержащих терм.
-        """
-        documents = await self.text_document_service.get_all_documents()
-        return {
-            i
-            for i, doc in enumerate(documents)
-            if term in self.tokenize(doc.text)
-        }
-
-    @staticmethod
-    def _and_operation(first_set, second_set):
-        """
-        Реализация логической операции AND.
-        :param first_set: множество индексов документов.
-        :param second_set: множество индексов документов.
-        :return: пересечение множеств.
-        """
-        if first_set is None:
-            return second_set
-        return first_set.intersection(second_set)
-
-    @staticmethod
-    def _or_operation(first_set, second_set):
-        """
-        Реализация логической операции OR.
-        :param first_set: множество индексов документов.
-        :param second_set: множество индексов документов.
-        :return: объединение множеств.
-        """
-        if first_set is None:
-            return second_set
-        return first_set.union(second_set)
-
-    async def _not_operation(self, first_set, second_set):
-        """
-        Реализация логической операции NOT.
-        :param first_set: множество индексов документов.
-        :param second_set: множество индексов документов.
-        :return: множество документов, которые есть в set1, но не в set2.
+        Производит поиск документов, удовлетворяюших условию
+        :param query: Строка с логическими AND, OR, NOT
+        :return: Список документов
         """
         documents = await self._load_documents()
-        if first_set is None:
-            return set(range(len(documents))).difference(second_set)
-        return first_set.difference(second_set)
+        tokens = await self._tokenize(query)
+        parsed_expression = await self._parse_expression(tokens)
+
+        return [
+            doc
+            for doc in documents
+            if await self._evaluate_expression(parsed_expression, doc.text)
+            is True
+        ]
+
+    async def _load_documents(self) -> list[TextDocument]:
+        """
+        Загрузка документов из MongoDB.
+        :return: список документов.
+        """
+        documents = await self.text_document_service.get_all_documents()
+        return documents
+
+    async def _tokenize(self, query: str) -> list[str]:
+        """
+        Разбивает строку с логическими AND, OR, NOT на токены
+        :param query: строка с логическими AND, OR, NOT
+        :return: список токенов
+        """
+        tokens = re.findall(r"\(|\)|\w+|AND|OR|NOT", query.lower())
+        return tokens
+
+    async def _parse_expression(
+        self, tokens: list[str]
+    ) -> tuple[str | tuple[str]]:
+        """
+        Разбирает список токенов и создает дерево выражений
+        с логическими операторами `AND`, `OR`, и `NOT`.
+
+        Пример:
+            tokens =
+            ['not','football','and','(','basketball','or','volleyball',')']
+
+            Результат:
+            ('and', ('not', 'football'), ('or', 'basketball', 'volleyball'))
+        :param tokens: Список токенов, содержащий логическое
+                выражение в виде строк.
+        :return: Дерево логического выражения, где каждый оператор
+         и операнд представлен как строка или вложенный список.
+        """
+
+        async def parse_primary():
+            token = tokens.pop(0)
+            if token == "(":
+                # Рекурсивно разбираем подвыражение в скобках
+                expr = await self._parse_expression(tokens)
+                tokens.pop(0)  # Убираем закрывающую скобку ')'
+                return expr
+            elif token == "not":
+                # NOT - унарный оператор, который
+                # применяется к следующему выражению
+                return "not", await parse_primary()
+            else:
+                # Обычное слово
+                return token
+
+        async def parse_and_or():
+            left = await parse_primary()
+            while tokens and tokens[0] in ("and", "or"):
+                operator = tokens.pop(0)
+                right = await parse_primary()
+                left = (operator, left, right)
+            return left
+
+        return await parse_and_or()
+
+    async def _evaluate_expression(self, expr, document_content: str) -> bool:
+        """
+        Рекурсивно оценивает логическое выражение для документа.
+        :param expr: Дерево логического выражения, результат
+                    self._parse_expression
+        :param document_content: Текст, к которому будет
+                    применяться логическое выражение
+        :return: True, если документ подходит под логическое выражение,
+                    иначе False
+        """
+        if isinstance(expr, str):
+            # Проверяем, есть ли слово в документе
+            return expr.lower() in document_content.lower()
+
+        if isinstance(expr, tuple):
+            operator = expr[0]
+            if operator == "not":
+                # NOT применяем к следующему выражению
+                return not await self._evaluate_expression(
+                    expr[1], document_content
+                )
+            elif operator == "and":
+                # AND применяется к двум выражениям
+                return await self._evaluate_expression(
+                    expr[1], document_content
+                ) and await self._evaluate_expression(
+                    expr[2], document_content
+                )
+            elif operator == "or":
+                # OR применяется к двум выражениям
+                return await self._evaluate_expression(
+                    expr[1], document_content
+                ) or await self._evaluate_expression(expr[2], document_content)
