@@ -3,6 +3,7 @@ from typing import Optional
 
 import uvicorn
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 
 from app.config import setup_config
 from app.container import ApplicationContainer
@@ -25,6 +26,13 @@ def create_web_app(
     v1_router = build_v1_router()
 
     app.include_router(v1_router)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.add_event_handler("startup", container.init_resources)
     app.add_event_handler("shutdown", container.shutdown_resources)
 
