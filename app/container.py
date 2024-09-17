@@ -43,13 +43,6 @@ class ApplicationContainer(containers.DeclarativeContainer):
         text_document_repository=text_document_repository,
     )
 
-    logical_search_service: Provider[LogicalSearchService] = (
-        providers.Singleton(
-            LogicalSearchService,
-            text_document_service=text_document_service,
-        )
-    )
-
     weight_coefficient_service: Provider[WeightCoefficientService] = (
         providers.Singleton(
             WeightCoefficientService,
@@ -59,8 +52,15 @@ class ApplicationContainer(containers.DeclarativeContainer):
 
     open_ai_service: Provider[OpenAIService] = providers.Singleton(
         OpenAIService,
-        logical_search_service=logical_search_service,
         open_ai_token=config.open_ai.token,
+    )
+
+    logical_search_service: Provider[LogicalSearchService] = (
+        providers.Singleton(
+            LogicalSearchService,
+            text_document_service=text_document_service,
+            open_ai_service=open_ai_service,
+        )
     )
 
     app: Callable[[], FastAPI] = providers.Singleton(FastAPI, title=APP_TITLE)

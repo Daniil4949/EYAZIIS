@@ -1,12 +1,28 @@
 import re
 from dataclasses import dataclass
 
+from app.service.open_ai_service import OpenAIService
 from app.service.text_document import TextDocument, TextDocumentService
 
 
 @dataclass
 class LogicalSearchService:
     text_document_service: TextDocumentService
+    open_ai_service: OpenAIService
+
+    async def _prepare_query(self, query: str) -> str:
+        query = await self.open_ai_service.getting_response_from_open_ai(
+            f"i will give u a query in natural "
+            f"language like 'I want to see "
+            f"python and java' u need to "
+            f"answer with query with logical operators "
+            f"like 'python and java' if i "
+            f"will ask smth like 'I dont want to see python, "
+            f"give me java', u should answer "
+            f"'not python and java' ur answer should "
+            f"include only logical query: {query}"
+        )
+        return query
 
     async def search(self, query: str) -> list[TextDocument]:
         """
@@ -14,6 +30,7 @@ class LogicalSearchService:
         :param query: Строка с логическими AND, OR, NOT
         :return: Список документов
         """
+        query = await self._prepare_query(query)
         documents = await self._load_documents()
         tokens = await self._tokenize(query)
         parsed_expression = await self._parse_expression(tokens)
