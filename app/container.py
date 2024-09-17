@@ -10,6 +10,7 @@ from app.service.calculate_weight_coefficient.service import (
     WeightCoefficientService,
 )
 from app.service.logical_search.service import LogicalSearchService
+from app.service.open_ai_service.service import OpenAIService
 from app.service.text_document import (
     TextDocument,
     TextDocumentRepository,
@@ -42,17 +43,23 @@ class ApplicationContainer(containers.DeclarativeContainer):
         text_document_repository=text_document_repository,
     )
 
-    logical_search_service: Provider[LogicalSearchService] = (
-        providers.Singleton(
-            LogicalSearchService,
-            text_document_service=text_document_service,
-        )
-    )
-
     weight_coefficient_service: Provider[WeightCoefficientService] = (
         providers.Singleton(
             WeightCoefficientService,
             text_document_service=text_document_service,
+        )
+    )
+
+    open_ai_service: Provider[OpenAIService] = providers.Singleton(
+        OpenAIService,
+        open_ai_token=config.open_ai.token,
+    )
+
+    logical_search_service: Provider[LogicalSearchService] = (
+        providers.Singleton(
+            LogicalSearchService,
+            text_document_service=text_document_service,
+            open_ai_service=open_ai_service,
         )
     )
 
