@@ -27,4 +27,11 @@ def setup_config(config: providers.Configuration):
         default="mongodb://localhost:27017/test_mongo",
     )
 
+    # MongoDB
+    # ------------------------------------------------------------------------
+    wrapper.set_str(
+        path="open_ai.token",
+        env="OPEN_AI_TOKEN",
+    )
+
     dynamic.config = config

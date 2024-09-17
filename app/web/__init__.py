@@ -1,6 +1,11 @@
 from fastapi import APIRouter
 
-from . import calculate_weight_coefficient, logical_search, text_documents
+from . import (
+    calculate_weight_coefficient,
+    logical_search,
+    open_ai,
+    text_documents,
+)
 
 
 def build_v1_router():
@@ -8,4 +13,5 @@ def build_v1_router():
     router.include_router(text_documents.router)
     router.include_router(logical_search.router)
     router.include_router(calculate_weight_coefficient.router)
+    router.include_router(open_ai.router)
     return router
