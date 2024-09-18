@@ -102,7 +102,7 @@ class LogicalSearchService:
         Рекурсивно оценивает логическое выражение для документа.
         """
         if isinstance(expr, str):
-            return expr.lower() in document_content.lower()
+            return expr.lower() in document_content.lower().split()
 
         if isinstance(expr, tuple):
             operator = expr[0]
