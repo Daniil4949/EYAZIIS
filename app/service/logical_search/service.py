@@ -43,16 +43,11 @@ class LogicalSearchService:
             if await self._evaluate_expression(parsed_expression, doc.text)
         ]
 
-        print(f"{result_docs=}", end="\n--------------------------")
-
         # Если документы не найдены, идем в Википедию
         if not result_docs:
             search_terms = self._get_search_terms(parsed_expression)
-            print(f"{search_terms=}")
             if search_terms:
                 result_docs = await self._search_in_wikipedia(search_terms)
-
-            print(f"{result_docs=}")
 
         return result_docs
 
