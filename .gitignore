@@ -9,3 +9,7 @@ venv/
 pip.conf
 **/_bot_token.txt
 **/_dialogs/*.json
+ru_de_language_model.keras
+**/assets/
+**/variables/
+vectorizer.joblib

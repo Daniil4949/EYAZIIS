@@ -10,6 +10,7 @@ from app.service.calculate_weight_coefficient.service import (
     WeightCoefficientService,
 )
 from app.service.logical_search.service import LogicalSearchService
+from app.service.neural_method.service import NeuralMethodService
 from app.service.open_ai_service.service import OpenAIService
 from app.service.text_document import (
     TextDocument,
@@ -61,6 +62,11 @@ class ApplicationContainer(containers.DeclarativeContainer):
             text_document_service=text_document_service,
             open_ai_service=open_ai_service,
         )
+    )
+
+    neural_method_service: Provider[NeuralMethodService] = providers.Singleton(
+        NeuralMethodService,
+        text_document_service=text_document_service,
     )
 
     app: Callable[[], FastAPI] = providers.Singleton(FastAPI, title=APP_TITLE)

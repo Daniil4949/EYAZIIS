@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from app.service.text_document.dto import TextDocument
+from app.service.text_document.enums import Language
 
 
 @dataclass
@@ -25,3 +26,12 @@ class TextDocumentRepository:
     @staticmethod
     async def delete_document(name: str) -> None:
         await TextDocument.find_one(TextDocument.name == name).delete()
+
+    @staticmethod
+    async def get_document_by_language(
+        language: Language,
+    ) -> list[TextDocument]:
+        documents = await TextDocument.find(
+            TextDocument.language == language
+        ).to_list()
+        return documents
