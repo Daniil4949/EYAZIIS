@@ -12,4 +12,7 @@ pip.conf
 ru_de_language_model.keras
 **/assets/
 **/variables/
-vectorizer.joblib
+ngramm_vectorizer.joblib
+neural_vectorizer.joblib
+neural_ru_de_language_model.keras
+ngramm_ru_de_language_model.keras

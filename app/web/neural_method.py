@@ -2,7 +2,7 @@ from dependency_injector.wiring import inject
 from fastapi import APIRouter
 
 from app.container import get_dependency
-from app.service.neural_method import NeuralMethodService
+from app.service.neural_and_ngramm_method import NgrammAndNeuralMethodService
 
 router = APIRouter(prefix="/neural-method", tags=["neural-method"])
 
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/neural-method", tags=["neural-method"])
 @router.post("/create-model")
 @inject
 async def create_model(
-    neural_method_service: NeuralMethodService = get_dependency(
+    neural_method_service: NgrammAndNeuralMethodService = get_dependency(
         "neural_method_service"
     ),
 ):
@@ -21,7 +21,7 @@ async def create_model(
 @inject
 async def predict_language(
     text: list[str],
-    neural_method_service: NeuralMethodService = get_dependency(
+    neural_method_service: NgrammAndNeuralMethodService = get_dependency(
         "neural_method_service"
     ),
 ):

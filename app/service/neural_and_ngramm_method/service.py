@@ -10,27 +10,30 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 from app.service.text_document import TextDocumentService
 from app.service.text_document.enums import Language
+from app.util.enums import Mode
 
 
 @dataclass
-class NeuralMethodService:
+class NgrammAndNeuralMethodService:
     """
-    Service for processing texts and
-    predicting language using a neural network.
+    Service for processing texts and predicting
+    language using a neural network.
     """
 
+    mode: str
     text_document_service: TextDocumentService
-    vectorizer = CountVectorizer(analyzer="char", ngram_range=(3, 3))
-    model_path = os.path.join(
-        os.path.dirname(__file__), "ru_de_language_model.keras"
-    )
+    vectorizer: CountVectorizer = None  # Инициализируем векторизатор как None
+
+    @property
+    def model_path(self):
+        model_path = os.path.join(
+            os.path.dirname(__file__),
+            (self.mode + "_ru_de_language_model.keras"),
+        )
+        return model_path
 
     async def _create_language_labels(self):
-        """Creates labels for languages based on texts from the repository.
-
-        Retrieves texts in Russian and German, assigning labels:
-        0 for Russian and 1 for German.
-        """
+        """Creates labels for languages based on texts from the repository."""
         corpus_russian = (
             await self.text_document_service.get_documents_by_language(
                 language=Language.RUSSIAN
@@ -44,10 +47,10 @@ class NeuralMethodService:
 
         self.labels_russian = [0] * len(
             corpus_russian
-        )  # Labels for the Russian language
+        )  # Labels for Russian language
         self.labels_german = [1] * len(
             corpus_german
-        )  # Labels for the German language
+        )  # Labels for German language
         self.corpus = corpus_russian + corpus_german  # Combining corpora
         self.labels = (
             self.labels_russian + self.labels_german
@@ -55,7 +58,16 @@ class NeuralMethodService:
 
     async def _creating_vectors(self):
         """Creates vectors for texts using the fitted vectorizer."""
-        self.X = self.vectorizer.fit_transform(self.corpus)
+        if self.vectorizer is None:
+            # Инициализируем векторизатор только один раз
+            self.vectorizer = (
+                CountVectorizer(analyzer="char", ngram_range=(3, 3))
+                if self.mode == Mode.NGRAMM
+                else CountVectorizer(analyzer="word")
+            )
+        self.X = self.vectorizer.fit_transform(
+            self.corpus
+        )  # Обучаем векторизатор
 
     async def create_model(self):
         """Creates and trains a neural network for language classification."""
@@ -79,15 +91,12 @@ class NeuralMethodService:
         )  # Training the model
         model.save(self.model_path)  # Saving the trained model
         joblib.dump(
-            self.vectorizer, "vectorizer.joblib"
+            self.vectorizer, (self.mode + "_vectorizer.joblib")
         )  # Saving the vectorizer
 
     @staticmethod
     async def _load_model(path: str):
-        """Loads a model from the specified path.
-
-        Raises an HTTPException if the model cannot be loaded.
-        """
+        """Loads a model from the specified path."""
         try:
             model = load_model(path)
         except Exception as e:
@@ -97,10 +106,7 @@ class NeuralMethodService:
 
     @staticmethod
     async def _load_vectorizer(path: str):
-        """Loads a vectorizer from the specified path.
-
-        Raises an HTTPException if the vectorizer cannot be loaded.
-        """
+        """Loads a vectorizer from the specified path."""
         try:
             vectorizer = joblib.load(path)
         except Exception as e:
@@ -109,13 +115,11 @@ class NeuralMethodService:
             return vectorizer
 
     async def predict(self, text: list[str]):
-        """Predicts the language of the given texts.
-
-        Loads the trained model and vectorizer, transforms the input text,
-        and returns the predicted languages.
-        """
+        """Predicts the language of the given texts."""
         model = await self._load_model(self.model_path)
-        vectorizer = await self._load_vectorizer("vectorizer.joblib")
+        vectorizer = await self._load_vectorizer(
+            self.mode + "_vectorizer.joblib"
+        )
 
         if model and vectorizer:
             x_new = vectorizer.transform(text)  # Transforming the input text
