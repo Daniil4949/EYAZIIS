@@ -27,5 +27,7 @@ scikit-learn = "*"
 numpy = "*"
 keras = "*"
 tensorflow = "*"
+beautifulsoup4 = "*"
+python-multipart = "*"
 
 [dev-packages]

@@ -1,5 +1,5 @@
 from dependency_injector.wiring import inject
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile
 
 from app.container import get_dependency
 from app.service.neural_and_ngramm_method import NgrammAndNeuralMethodService
@@ -20,9 +20,9 @@ async def create_model(
 @router.post("/predict")
 @inject
 async def predict_language(
-    text: list[str],
+    file: UploadFile = File(...),
     neural_method_service: NgrammAndNeuralMethodService = get_dependency(
         "neural_method_service"
     ),
 ):
-    return await neural_method_service.predict(text)
+    return await neural_method_service.predict(file)

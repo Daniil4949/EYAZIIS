@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+from fastapi import File
+
+from app.service.html_processing import HtmlProcessingService
 from app.service.text_document.enums import Language
 
 
@@ -10,6 +13,7 @@ class AlphabetMethodService:
     language using an alphabet frequency method.
     """
 
+    html_processing_service: HtmlProcessingService
     alphabet_frequencies: dict = None
 
     def __post_init__(self):
@@ -84,9 +88,10 @@ class AlphabetMethodService:
             },
         }
 
-    async def predict(self, text: str):
+    async def predict(self, file: File):
         """Predicts the language of the given
         text based on alphabet frequency."""
+        text = await self.html_processing_service.process_file(file)
         text = text.lower()  # Приводим текст к нижнему регистру
         text_length = len(text)
 

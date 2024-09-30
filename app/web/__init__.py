@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from . import (
     alphabet_method,
     calculate_weight_coefficient,
+    html_processing,
     logical_search,
     neural_method,
     ngramm_method,
@@ -20,4 +21,5 @@ def build_v1_router():
     router.include_router(neural_method.router)
     router.include_router(ngramm_method.router)
     router.include_router(alphabet_method.router)
+    router.include_router(html_processing.router)
     return router

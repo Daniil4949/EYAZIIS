@@ -3,11 +3,12 @@ from dataclasses import dataclass
 
 import joblib
 import numpy as np
-from fastapi import HTTPException
+from fastapi import File, HTTPException
 from keras.api.layers import Dense
 from keras.api.models import Sequential, load_model
 from sklearn.feature_extraction.text import CountVectorizer
 
+from app.service.html_processing import HtmlProcessingService
 from app.service.text_document import TextDocumentService
 from app.service.text_document.enums import Language
 from app.util.enums import Mode
@@ -21,6 +22,7 @@ class NgrammAndNeuralMethodService:
     """
 
     mode: str
+    html_processing_service: HtmlProcessingService
     text_document_service: TextDocumentService
     vectorizer: CountVectorizer = None  # Инициализируем векторизатор как None
 
@@ -114,8 +116,9 @@ class NgrammAndNeuralMethodService:
         else:
             return vectorizer
 
-    async def predict(self, text: list[str]):
+    async def predict(self, file: File):
         """Predicts the language of the given texts."""
+        text = [await self.html_processing_service.process_file(file)]
         model = await self._load_model(self.model_path)
         vectorizer = await self._load_vectorizer(
             self.mode + "_vectorizer.joblib"

@@ -10,6 +10,7 @@ from app.service.alphabet_method.service import AlphabetMethodService
 from app.service.calculate_weight_coefficient.service import (
     WeightCoefficientService,
 )
+from app.service.html_processing.service import HtmlProcessingService
 from app.service.logical_search.service import LogicalSearchService
 from app.service.neural_and_ngramm_method.service import (
     NgrammAndNeuralMethodService,
@@ -68,10 +69,15 @@ class ApplicationContainer(containers.DeclarativeContainer):
         )
     )
 
+    html_processing_service: Provider[HtmlProcessingService] = (
+        providers.Resource(HtmlProcessingService)
+    )
+
     neural_method_service: Provider[NgrammAndNeuralMethodService] = (
         providers.Singleton(
             NgrammAndNeuralMethodService,
             mode=Mode.NEURAL,
+            html_processing_service=html_processing_service,
             text_document_service=text_document_service,
         )
     )
@@ -80,6 +86,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
         providers.Singleton(
             NgrammAndNeuralMethodService,
             mode=Mode.NGRAMM,
+            html_processing_service=html_processing_service,
             text_document_service=text_document_service,
         )
     )
@@ -87,6 +94,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
     alphabet_method_service: Provider[AlphabetMethodService] = (
         providers.Singleton(
             AlphabetMethodService,
+            html_processing_service=html_processing_service,
         )
     )
 
