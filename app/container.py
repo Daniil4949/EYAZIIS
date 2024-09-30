@@ -6,6 +6,7 @@ from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide
 from fastapi import Depends, FastAPI
 
+from app.service.alphabet_method.service import AlphabetMethodService
 from app.service.calculate_weight_coefficient.service import (
     WeightCoefficientService,
 )
@@ -80,6 +81,12 @@ class ApplicationContainer(containers.DeclarativeContainer):
             NgrammAndNeuralMethodService,
             mode=Mode.NGRAMM,
             text_document_service=text_document_service,
+        )
+    )
+
+    alphabet_method_service: Provider[AlphabetMethodService] = (
+        providers.Singleton(
+            AlphabetMethodService,
         )
     )
 

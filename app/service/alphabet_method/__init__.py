@@ -1,0 +1,1 @@
+from app.service.alphabet_method.service import AlphabetMethodService
