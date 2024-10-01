@@ -29,5 +29,6 @@ keras = "*"
 tensorflow = "*"
 beautifulsoup4 = "*"
 python-multipart = "*"
+aioboto3 = "*"
 
 [dev-packages]

@@ -8,11 +8,6 @@ from fastapi import File, HTTPException
 class HtmlProcessingService:
 
     async def process_file(self, file: File) -> str:
-        if not file.filename.endswith(".html"):
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid file type. Please upload an HTML file.",
-            )
         try:
             content = await file.read()
             result = self._parse_html(content.decode("utf-8"))

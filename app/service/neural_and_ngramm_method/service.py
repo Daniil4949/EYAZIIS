@@ -1,3 +1,4 @@
+import copy
 import os
 from dataclasses import dataclass
 
@@ -9,7 +10,9 @@ from keras.api.models import Sequential, load_model
 from sklearn.feature_extraction.text import CountVectorizer
 
 from app.service.html_processing import HtmlProcessingService
-from app.service.text_document import TextDocumentService
+from app.service.report_generation.service import ReportGenerationService
+from app.service.s3_service import S3Service
+from app.service.text_document import TextDocument, TextDocumentService
 from app.service.text_document.enums import Language
 from app.util.enums import Mode
 
@@ -24,6 +27,8 @@ class NgrammAndNeuralMethodService:
     mode: str
     html_processing_service: HtmlProcessingService
     text_document_service: TextDocumentService
+    s3_service: S3Service
+    report_generation_service: ReportGenerationService
     vectorizer: CountVectorizer = None  # Инициализируем векторизатор как None
 
     @property
@@ -118,23 +123,26 @@ class NgrammAndNeuralMethodService:
 
     async def predict(self, file: File):
         """Predicts the language of the given texts."""
-        text = [await self.html_processing_service.process_file(file)]
+        file_url = await self.s3_service.upload_file(copy.deepcopy(file))
+        texts = [await self.html_processing_service.process_file(file)]
         model = await self._load_model(self.model_path)
         vectorizer = await self._load_vectorizer(
             self.mode + "_vectorizer.joblib"
         )
-
+        languages = []
         if model and vectorizer:
-            x_new = vectorizer.transform(text)  # Transforming the input text
+            x_new = vectorizer.transform(texts)  # Transforming the input text
             predictions = model.predict(x_new.toarray())  # Making predictions
 
-            languages = []
             for pred in predictions:
                 language = (
-                    "German" if pred >= 0.5 else "Russian"
+                    "de" if pred >= 0.5 else "ru"
                 )  # Interpreting predictions
                 languages.append(language)
+            await self.text_document_service.create_document(
+                TextDocument(text=texts[0], language=languages[0])
+            )
 
-            return languages
-
-        return "Couldn't predict language"  # Error message if prediction fails
+        return await self.report_generation_service.generate_csv_report(
+            file_url=file_url, result=languages[0]
+        )

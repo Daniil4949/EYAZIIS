@@ -5,7 +5,7 @@ from pydantic import Field
 
 
 class TextDocument(Document):
-    name: str
+    name: Optional[str]
     text: str
     language: Optional[str] = Field(default="ru")
 

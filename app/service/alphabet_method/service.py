@@ -1,8 +1,12 @@
+import copy
 from dataclasses import dataclass
 
 from fastapi import File
 
 from app.service.html_processing import HtmlProcessingService
+from app.service.report_generation.service import ReportGenerationService
+from app.service.s3_service import S3Service
+from app.service.text_document import TextDocument, TextDocumentService
 from app.service.text_document.enums import Language
 
 
@@ -13,7 +17,10 @@ class AlphabetMethodService:
     language using an alphabet frequency method.
     """
 
+    text_document_service: TextDocumentService
     html_processing_service: HtmlProcessingService
+    report_generation_service: ReportGenerationService
+    s3_service: S3Service
     alphabet_frequencies: dict = None
 
     def __post_init__(self):
@@ -91,6 +98,7 @@ class AlphabetMethodService:
     async def predict(self, file: File):
         """Predicts the language of the given
         text based on alphabet frequency."""
+        file_url = await self.s3_service.upload_file(copy.deepcopy(file))
         text = await self.html_processing_service.process_file(file)
         text = text.lower()  # Приводим текст к нижнему регистру
         text_length = len(text)
@@ -117,4 +125,9 @@ class AlphabetMethodService:
 
         # Определяем язык с наименьшей ошибкой
         predicted_language = min(scores, key=scores.get)
-        return predicted_language
+        await self.text_document_service.create_document(
+            TextDocument(text=text, language=predicted_language)
+        )
+        return await self.report_generation_service.generate_csv_report(
+            file_url, predicted_language
+        )
