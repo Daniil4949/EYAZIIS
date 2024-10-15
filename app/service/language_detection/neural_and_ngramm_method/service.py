@@ -10,7 +10,9 @@ from keras.api.models import Sequential, load_model
 from sklearn.feature_extraction.text import CountVectorizer
 
 from app.service.html_processing import HtmlProcessingService
-from app.service.report_generation.service import ReportGenerationService
+from app.service.language_detection.report_generation.service import (
+    ReportGenerationService,
+)
 from app.service.s3_service import S3Service
 from app.service.text_document import TextDocument, TextDocumentService
 from app.service.text_document.enums import Language

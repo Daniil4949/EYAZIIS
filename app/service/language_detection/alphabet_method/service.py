@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from fastapi import File
 
 from app.service.html_processing import HtmlProcessingService
-from app.service.report_generation.service import ReportGenerationService
+from app.service.language_detection.report_generation.service import (
+    ReportGenerationService,
+)
 from app.service.s3_service import S3Service
 from app.service.text_document import TextDocument, TextDocumentService
 from app.service.text_document.enums import Language
@@ -22,6 +24,7 @@ class AlphabetMethodService:
     report_generation_service: ReportGenerationService
     s3_service: S3Service
     alphabet_frequencies: dict = None
+
 
     def __post_init__(self):
         # Определяем частотные характеристики
@@ -100,6 +103,16 @@ class AlphabetMethodService:
         text based on alphabet frequency."""
         file_url = await self.s3_service.upload_file(copy.deepcopy(file))
         text = await self.html_processing_service.process_file(file)
+
+        predicted_language = await self._predict_language(text)
+        await self.text_document_service.create_document(
+            TextDocument(text=text, language=predicted_language)
+        )
+        return await self.report_generation_service.generate_csv_report(
+            file_url, predicted_language
+        )
+
+    async def _predict_language(self, text: str):
         text = text.lower()  # Приводим текст к нижнему регистру
         text_length = len(text)
 
@@ -120,14 +133,8 @@ class AlphabetMethodService:
         for lang, freq_dict in self.alphabet_frequencies.items():
             for letter, expected_freq in freq_dict.items():
                 scores[lang] += (
-                    frequencies.get(letter, 0) - expected_freq
-                ) ** 2
+                                        frequencies.get(letter, 0) - expected_freq
+                                ) ** 2
 
         # Определяем язык с наименьшей ошибкой
-        predicted_language = min(scores, key=scores.get)
-        await self.text_document_service.create_document(
-            TextDocument(text=text, language=predicted_language)
-        )
-        return await self.report_generation_service.generate_csv_report(
-            file_url, predicted_language
-        )
+        return min(scores, key=scores.get)

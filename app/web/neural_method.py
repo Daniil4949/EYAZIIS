@@ -2,7 +2,9 @@ from dependency_injector.wiring import inject
 from fastapi import APIRouter, File, UploadFile
 
 from app.container import get_dependency
-from app.service.neural_and_ngramm_method import NgrammAndNeuralMethodService
+from app.service.language_detection.neural_and_ngramm_method import (
+    NgrammAndNeuralMethodService,
+)
 
 router = APIRouter(prefix="/neural-method", tags=["neural-method"])
 
