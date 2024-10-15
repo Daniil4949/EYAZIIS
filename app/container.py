@@ -7,17 +7,22 @@ from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide
 from fastapi import Depends, FastAPI
 
-from app.service.alphabet_method.service import AlphabetMethodService
 from app.service.calculate_weight_coefficient.service import (
     WeightCoefficientService,
 )
 from app.service.html_processing.service import HtmlProcessingService
-from app.service.logical_search.service import LogicalSearchService
-from app.service.neural_and_ngramm_method.service import (
+from app.service.language_detection.alphabet_method import (
+    AlphabetMethodService,
+)
+from app.service.language_detection.neural_and_ngramm_method import (
     NgrammAndNeuralMethodService,
 )
+from app.service.language_detection.report_generation.service import (
+    ReportGenerationService,
+)
+from app.service.logical_search.service import LogicalSearchService
 from app.service.open_ai_service.service import OpenAIService
-from app.service.report_generation.service import ReportGenerationService
+from app.service.referat.service import ReferatService
 from app.service.s3_service import S3Service
 from app.service.text_document import (
     TextDocument,
@@ -135,6 +140,13 @@ class ApplicationContainer(containers.DeclarativeContainer):
             text_document_service=text_document_service,
             s3_service=s3_service,
             report_generation_service=report_generation_service,
+        )
+    )
+
+    referat_service: Provider[ReferatService] = (
+        providers.Singleton(
+            ReferatService,
+            language_prediction_service=alphabet_method_service,
         )
     )
 
