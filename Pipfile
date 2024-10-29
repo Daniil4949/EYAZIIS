@@ -30,5 +30,12 @@ tensorflow = "*"
 beautifulsoup4 = "*"
 python-multipart = "*"
 aioboto3 = "*"
+transformers = "*"
+sentencepiece = "*"
+torch = "*"
+sacremoses = "*"
+spacy = "*"
+matplotlib = "*"
+typing-extensions = "==4.5.0"
 
 [dev-packages]
