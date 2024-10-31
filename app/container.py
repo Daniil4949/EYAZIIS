@@ -13,6 +13,7 @@ from app.service.calculate_weight_coefficient.service import (
 )
 from app.service.html_processing.service import HtmlProcessingService
 from app.service.logical_search.service import LogicalSearchService
+from app.service.machine_translator.service import MachineTranslatorService
 from app.service.neural_and_ngramm_method.service import (
     NgrammAndNeuralMethodService,
 )
@@ -136,6 +137,10 @@ class ApplicationContainer(containers.DeclarativeContainer):
             s3_service=s3_service,
             report_generation_service=report_generation_service,
         )
+    )
+
+    machine_translator_service: Provider[MachineTranslatorService] = (
+        providers.Singleton(MachineTranslatorService)
     )
 
     app: Callable[[], FastAPI] = providers.Singleton(FastAPI, title=APP_TITLE)

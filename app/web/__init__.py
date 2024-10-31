@@ -5,6 +5,7 @@ from . import (
     calculate_weight_coefficient,
     html_processing,
     logical_search,
+    machine_translator,
     neural_method,
     ngramm_method,
     open_ai,
@@ -22,4 +23,5 @@ def build_v1_router():
     router.include_router(ngramm_method.router)
     router.include_router(alphabet_method.router)
     router.include_router(html_processing.router)
+    router.include_router(machine_translator.router)
     return router
