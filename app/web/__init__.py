@@ -8,6 +8,7 @@ from . import (
     neural_method,
     ngramm_method,
     open_ai,
+    speech_synthesis,
     text_documents,
 )
 
@@ -22,4 +23,5 @@ def build_v1_router():
     router.include_router(ngramm_method.router)
     router.include_router(alphabet_method.router)
     router.include_router(html_processing.router)
+    router.include_router(speech_synthesis.router)
     return router

@@ -30,5 +30,6 @@ tensorflow = "*"
 beautifulsoup4 = "*"
 python-multipart = "*"
 aioboto3 = "*"
+pyttsx3 = "*"
 
 [dev-packages]

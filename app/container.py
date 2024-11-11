@@ -19,6 +19,7 @@ from app.service.neural_and_ngramm_method.service import (
 from app.service.open_ai_service.service import OpenAIService
 from app.service.report_generation.service import ReportGenerationService
 from app.service.s3_service import S3Service
+from app.service.speech_synthesis.service import SpeechSynthesisService
 from app.service.text_document import (
     TextDocument,
     TextDocumentRepository,
@@ -136,6 +137,10 @@ class ApplicationContainer(containers.DeclarativeContainer):
             s3_service=s3_service,
             report_generation_service=report_generation_service,
         )
+    )
+
+    speech_synthesis_service: Provider[SpeechSynthesisService] = (
+        providers.Singleton(SpeechSynthesisService)
     )
 
     app: Callable[[], FastAPI] = providers.Singleton(FastAPI, title=APP_TITLE)
